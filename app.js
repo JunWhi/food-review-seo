@@ -29,11 +29,18 @@ mongoose.connect(url, {
 app.set('view engine', 'ejs');
 app.set('views', './views');
 
+// Function to calculate the average rating
+const calculateAverageRating = (reviews) => {
+    if (reviews.length === 0) return 0; // Return 0 if no reviews
+    const sumRatings = reviews.reduce((sum, review) => sum + review.rating, 0);
+    const average = sumRatings / reviews.length;
+    return !isNaN(average) ? average.toFixed(2) : 0; // Ensure it's a valid number
+};
+
 // Route to show all businesses
 app.get('/business', async (req, res) => {
-    const business = await Business.find({});
-    console.log(business);
-    res.render('businesses/index', { business });
+    const businesses = await Business.find({});
+    res.render('businesses/index', { businesses });
 });
 
 // Route to show a form to add a new business
@@ -52,7 +59,7 @@ app.post('/business', async (req, res) => {
 // Route to show details of a business
 app.get('/business/:id', async (req, res) => {
     const { id } = req.params;
-    const business = await Business.findById(id);
+    const business = await Business.findById(id).populate('reviews');
     res.render('businesses/show', { business });
 });
 
@@ -75,7 +82,7 @@ app.put('/business/:id', async (req, res) => {
 app.delete('/business/:id', async (req, res) => {
     const { id } = req.params;
     await Business.findByIdAndDelete(id);
-    res.redirect('/business'); // Redirect to the main business listing page
+    res.redirect('/business');
 });
 
 // Route to delete a review
@@ -92,14 +99,8 @@ app.delete("/business/:id/reviews/:reviewId", async (req, res) => {
 
     // Recalculate the average rating
     const business = await Business.findById(id).populate('reviews');
-    if (business.reviews.length > 0) {
-        const totalRatings = business.reviews.length;
-        const sumRatings = business.reviews.reduce((sum, review) => sum + review.rating, 0);
-        const newAverage = (sumRatings / totalRatings);
-        business.averageRating = !isNaN(newAverage) ? newAverage.toFixed(2) : 0; // Ensure it's a valid number
-    } else {
-        business.averageRating = 0; // No reviews left, reset averageRating
-    }
+    const averageRating = calculateAverageRating(business.reviews);
+    business.averageRating = averageRating;
 
     // Save the updated business
     await business.save();
@@ -110,31 +111,53 @@ app.delete("/business/:id/reviews/:reviewId", async (req, res) => {
 // Route to add a new review to a business
 app.post('/business/:id/reviews', async (req, res) => {
     const { id } = req.params;
-    const { rating, body } = req.body;
+    const { rating, comment } = req.body;
 
     // Create a new review and save it
-    const review = new Review({ rating, body });
+    const review = new Review({ rating, comment, businessId: id });
     await review.save();
 
     // Add the review to the business's reviews array
     const business = await Business.findById(id);
     business.reviews.push(review);
-    
-    // Calculate the new average rating
-    const totalRatings = business.reviews.length;
-    const sumRatings = business.reviews.reduce((sum, review) => sum + review.rating, 0);
-    const newAverage = (sumRatings / totalRatings);
 
-    // Ensure the average rating is a valid number
-    business.averageRating = !isNaN(newAverage) ? newAverage.toFixed(2) : 0;
+    // Recalculate the new average rating
+    const averageRating = calculateAverageRating(business.reviews);
+    business.averageRating = averageRating;
 
     // Save the updated business
     await business.save();
 
+    // Redirect to the business detail page
     res.redirect(`/business/${id}`);
 });
 
+// Route to add a new review to a business
+app.post('/business/:id/reviews', async (req, res) => {
+    const { id } = req.params;
+    const { rating, comment } = req.body;
+
+    // Create a new review and save it
+    const review = new Review({ rating, comment, businessId: id });
+    await review.save();
+
+    // Add the review to the business's reviews array
+    const business = await Business.findById(id);
+    business.reviews.push(review); // Add the review
+
+    // Recalculate the new average rating
+    const averageRating = calculateAverageRating(business.reviews);
+    business.averageRating = averageRating; // Update the average rating
+
+    // Save the updated business
+    await business.save();
+
+    // Redirect to the business detail page
+    res.redirect(`/business/${id}`);
+});
+
+
 // Server listening
-app.listen(3033, () => {
-    console.log('Server is running on port 3019');
+app.listen(2114, () => {
+    console.log('Server is running on port 2098');
 });

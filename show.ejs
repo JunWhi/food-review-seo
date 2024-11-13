@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= business.title %></title>
+</head>
+<body>
+
+    <h1><%= business.title %></h1>
+    <p>Location: <%= business.location %></p>
+    <p>Description: <%= business.description %></p>
+
+    <h3>Average Rating: <%= business.averageRating %> &#9733;</h3>
+
+    <!-- Review Form -->
+    <div class="review-form">
+        <h3>Leave a Review</h3>
+        <form action="/business/<%= business._id %>/reviews" method="POST">
+            <div class="form-group">
+                <label for="rating">Rating</label>
+                <input type="range" id="rating" name="rating" min="1" max="5">
+            </div>
+
+            <div class="form-group">
+                <label for="comment">Review</label>
+                <textarea id="comment" name="comment" cols="30" rows="3"></textarea>
+            </div>
+
+            <button type="submit">Submit Review</button>
+        </form>
+    </div>
+
+    <h2>Reviews:</h2>
+    <% business.reviews.forEach(review => { %>
+        <div class="review">
+            <p><strong>Rating:</strong> <%= review.rating %> &#9733;</p>
+            <p><strong>Comment:</strong> <%= review.comment %></p>
+
+            <!-- Delete Button for each review -->
+            <form action="/business/<%= business._id %>/reviews/<%= review._id %>?_method=DELETE" method="POST">
+                <button type="submit">Delete Review</button>
+            </form>
+        </div>
+    <% }); %>
+
+    <a href="/business">Back to All Businesses</a>
+</body>
+</html>
